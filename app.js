@@ -27,7 +27,8 @@ var STORES=[
   {short:"Li",name:"Lidl",note:"Aktuelle Prospekte",src:"https://www.lidl.de/c/online-prospekte/s10005610"},
   {short:"AS",name:"Aldi Süd",note:"Wochenangebote",src:"https://www.aldi-sued.de/produkte/wochenangebote/k/1588161426582123"},
   {short:"AN",name:"Aldi Nord",note:"Wochenangebote",src:"https://www.aldi-nord.de/angebote.html"},
-  {short:"Ac",name:"Action",note:"Wochenangebote, Mi. bis Di.",src:"https://www.action.com/de-de/wochenangebote/"}
+  {short:"Ac",name:"Action",note:"Wochenangebote, Mi. bis Di.",src:"https://www.action.com/de-de/wochenangebote/"},
+  {short:"dm",name:"dm Grünberg",note:"Göbelnröder Straße 3, Grünberg",src:"https://www.dm.de/store/d53l/gruenberg/goebelnroeder-strasse-3"}
 ];
 $("store-list").innerHTML=STORES.map(function(s){
   return '<a class="store" href="'+esc(s.src)+'" target="_blank" rel="noopener"><span class="logo">'+esc(s.short)+'</span><span class="txt" style="flex:1;min-width:0"><span class="name" style="display:block;font-weight:600">'+esc(s.name)+'</span><span class="sub" style="display:block;font-size:13px;color:var(--muted)">'+esc(s.note)+'</span></span><span class="arrow">'+ARROW+"</span></a>";
