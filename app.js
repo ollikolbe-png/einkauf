@@ -149,38 +149,120 @@ function handleEan(ean){
   });
 }
 
-/* ---------- Barcode-Scanner (Live-Kamera) ---------- */
-var reader=null,scanning=false;
+/* ---------- Barcode-Scanner (Live-Kamera, eigene Leseschleife) ---------- */
+var scanning=false,stream=null,loopTimer=null,mfr=null,tick=0,canvas=document.createElement("canvas");
 function scanMsg(t){$("scan-msg").textContent=t}
+function getReader(){
+  if(mfr)return mfr;
+  var Z=window.ZXing,hints=new Map();
+  hints.set(Z.DecodeHintType.POSSIBLE_FORMATS,[Z.BarcodeFormat.EAN_13,Z.BarcodeFormat.EAN_8,Z.BarcodeFormat.UPC_A,Z.BarcodeFormat.UPC_E]);
+  hints.set(Z.DecodeHintType.TRY_HARDER,true);
+  mfr=new Z.MultiFormatReader();mfr.setHints(hints);return mfr;
+}
+/* Ein Bildausschnitt -> Ziffern oder null. Versucht beide Binarisierer, optional gedreht. */
+function decodeRegion(src,sx,sy,sw,sh,maxW,rot,binIdx){
+  var Z=window.ZXing,s=Math.min(1,maxW/Math.max(sw,sh)),cw=Math.max(1,Math.round(sw*s)),ch=Math.max(1,Math.round(sh*s)),g=canvas.getContext("2d",{willReadFrequently:true});
+  if(rot){canvas.width=ch;canvas.height=cw;g.setTransform(1,0,0,1,0,0);g.translate(ch/2,cw/2);g.rotate(Math.PI/2);g.drawImage(src,sx,sy,sw,sh,-cw/2,-ch/2,cw,ch);g.setTransform(1,0,0,1,0,0)}
+  else{canvas.width=cw;canvas.height=ch;g.drawImage(src,sx,sy,sw,sh,0,0,cw,ch)}
+  var lum=new Z.HTMLCanvasElementLuminanceSource(canvas);
+  var bins=binIdx==null?[0,1]:[binIdx];
+  for(var i=0;i<bins.length;i++){
+    try{
+      var bb=new Z.BinaryBitmap(bins[i]?new Z.GlobalHistogramBinarizer(lum):new Z.HybridBinarizer(lum));
+      var r=getReader().decode(bb),t=r&&r.getText();
+      if(validEan(t))return t;
+    }catch(e){}
+  }
+  return null;
+}
 function stopScan(){
-  scanning=false;
-  try{if(reader)reader.reset()}catch(e){}
-  var v=$("video");if(v.srcObject){v.srcObject.getTracks().forEach(function(t){t.stop()});v.srcObject=null}
+  scanning=false;clearTimeout(loopTimer);
+  if(stream){stream.getTracks().forEach(function(t){t.stop()});stream=null}
+  var v=$("video");v.srcObject=null;
   $("scanner").hidden=true;
 }
+function found(code){
+  if(navigator.vibrate)navigator.vibrate(60);
+  stopScan();handleEan(code);
+}
+function scanLoop(){
+  if(!scanning)return;
+  var v=$("video"),vw=v.videoWidth,vh=v.videoHeight;
+  if(vw&&vh&&v.readyState>=2){
+    tick++;
+    var code=null;
+    try{
+      /* Sichtbaren Rahmen auf die Kamerapixel umrechnen (Video ist mit object-fit:cover beschnitten) */
+      var vr=v.getBoundingClientRect(),fr=document.querySelector("#scanner .frame").getBoundingClientRect();
+      var sc=Math.max(vr.width/vw,vr.height/vh),ox=(vw*sc-vr.width)/2,oy=(vh*sc-vr.height)/2;
+      var fx=(fr.left-vr.left+ox)/sc,fy=(fr.top-vr.top+oy)/sc,fw=fr.width/sc,fh=fr.height/sc;
+      /* etwas großzügiger als der Rahmen */
+      var mx=fw*0.08,my=fh*0.6;fx=Math.max(0,fx-mx);fy=Math.max(0,fy-my);fw=Math.min(vw-fx,fw+2*mx);fh=Math.min(vh-fy,fh+2*my);
+      var phase=tick%4;
+      if(phase===0)code=decodeRegion(v,fx,fy,fw,fh,1000,false,0);
+      else if(phase===1)code=decodeRegion(v,fx,fy,fw,fh,700,false,1);
+      else if(phase===2)code=decodeRegion(v,0,0,vw,vh,1100,false,0);
+      else code=decodeRegion(v,0,0,vw,vh,1100,true,0);
+    }catch(e){}
+    if(code){found(code);return}
+    if(tick===40)scanMsg("Noch nichts erkannt: etwas weiter weg halten (ca. 15–20 cm), bis der Strichcode scharf ist.");
+  }
+  loopTimer=setTimeout(scanLoop,60);
+}
 function startScan(){
-  if(!window.ZXing||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
-    toast("Die Kamera ist hier nicht verfügbar.");openSheet("Von Hand eintragen",{});return;
+  if(!window.ZXing){toast("Der Barcode-Leser lädt noch. Bitte kurz warten und noch einmal tippen.");return}
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    toast("Live-Kamera nicht verfügbar. Nimm „Foto“.");$("scanner").hidden=false;scanMsg("Tippe auf „Foto“ und fotografiere den Barcode.");return;
   }
-  $("scanner").hidden=false;scanMsg("Kamera startet …");scanning=true;
-  if(!reader){
-    var hints=new Map();
-    hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS,[ZXing.BarcodeFormat.EAN_13,ZXing.BarcodeFormat.EAN_8,ZXing.BarcodeFormat.UPC_A,ZXing.BarcodeFormat.UPC_E]);
-    hints.set(ZXing.DecodeHintType.TRY_HARDER,true);
-    reader=new ZXing.BrowserMultiFormatReader(hints,250);
-  }
-  var v=$("video");v.setAttribute("playsinline","");v.muted=true;
-  reader.decodeFromConstraints({audio:false,video:{facingMode:{ideal:"environment"},width:{ideal:1280},height:{ideal:720}}},v,function(res){
-    if(!scanning||!res)return;
-    var code=res.getText();if(!validEan(code))return;
-    if(navigator.vibrate)navigator.vibrate(60);
-    stopScan();handleEan(code);
-  }).then(function(){if(scanning)scanMsg("Barcode in den Rahmen halten")},function(err){
-    stopScan();
+  $("scanner").hidden=false;scanMsg("Kamera startet …");scanning=true;tick=0;
+  navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"},width:{ideal:1920},height:{ideal:1080}}}).then(function(s){
+    if(!scanning){s.getTracks().forEach(function(t){t.stop()});return}
+    stream=s;var v=$("video");v.setAttribute("playsinline","");v.muted=true;v.srcObject=s;
+    var p=v.play();if(p&&p.catch)p.catch(function(){});
+    /* Etwas Zoom und Dauerfokus, wo das Gerät es kann (hilft bei iPhones, die nah unscharf sind) */
+    try{
+      var tr=s.getVideoTracks()[0],caps=tr.getCapabilities?tr.getCapabilities():{},adv={};
+      if(caps.focusMode&&caps.focusMode.indexOf("continuous")>=0)adv.focusMode="continuous";
+      if(caps.zoom&&caps.zoom.max>=1.5)adv.zoom=Math.min(caps.zoom.max,2);
+      if(Object.keys(adv).length)tr.applyConstraints({advanced:[adv]}).catch(function(){});
+    }catch(e){}
+    scanMsg("Barcode quer in den Rahmen halten");
+    scanLoop();
+  },function(err){
+    scanning=false;
     var denied=err&&(err.name==="NotAllowedError"||err.name==="SecurityError");
-    toast(denied?"Kein Kamerazugriff. Erlaube ihn in den iPhone-Einstellungen unter Safari › Kamera.":"Die Kamera ließ sich nicht starten.");
+    scanMsg(denied?"Kein Kamerazugriff. Erlaube ihn unter Einstellungen › Safari › Kamera, oder nimm „Foto“.":"Die Kamera ließ sich nicht starten. Nimm „Foto“.");
   });
 }
+/* Foto statt Live-Kamera */
+function decodeFile(file){
+  return new Promise(function(resolve){
+    var url=URL.createObjectURL(file),im=new Image();
+    im.onerror=function(){URL.revokeObjectURL(url);resolve(null)};
+    im.onload=function(){
+      URL.revokeObjectURL(url);
+      var W=im.naturalWidth,H=im.naturalHeight,res=null;
+      var tries=[[0,0,1,1600,0],[0.15,0.15,0.7,1600,0],[0,0,1,1000,0],[0,0,1,1600,1],[0.15,0.15,0.7,1000,1],[0,0,1,2400,0],[0.25,0.3,0.5,900,0],[0,0,1,700,0]],i=0;
+      (function next(){
+        if(res||i>=tries.length){resolve(res);return}
+        var t=tries[i++];res=decodeRegion(im,W*t[0],H*t[1],W*t[2],H*(t[0]===0?1:t[2]),t[3],!!t[4],null);
+        setTimeout(next,0);
+      })();
+    };
+    im.src=url;
+  });
+}
+$("scan-photo").addEventListener("change",function(e){
+  var f=e.target.files&&e.target.files[0];e.target.value="";if(!f)return;
+  stopScan();
+  if(!window.ZXing){toast("Der Barcode-Leser ist noch nicht geladen.");return}
+  toast("Barcode wird gesucht …");
+  decodeFile(f).then(function(code){
+    if(code){found(code);return}
+    openSheet("Barcode eintippen",{});$("p-ean").focus();
+    setStatus("Kein Barcode auf dem Foto erkannt. Tipp die Ziffern unter dem Strichcode ein oder versuch ein schärferes Foto.");
+  });
+});
 $("scan-btn").addEventListener("click",startScan);
 $("scan-close").addEventListener("click",stopScan);
 $("scan-manual").addEventListener("click",function(){stopScan();openSheet("Barcode eintippen",{});$("p-ean").focus();setStatus("Tipp die Ziffern unter dem Strichcode ein.")});

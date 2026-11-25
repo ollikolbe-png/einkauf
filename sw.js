@@ -1,4 +1,4 @@
-const CACHE = "einkaufshelfer-v2";
+const CACHE = "einkaufshelfer-v3";
 const LIB = "https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js";
 const FILES = [
   "./", "index.html", "app.js", "manifest.webmanifest",
