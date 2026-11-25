@@ -197,15 +197,18 @@ function scanLoop(){
       var sc=Math.max(vr.width/vw,vr.height/vh),ox=(vw*sc-vr.width)/2,oy=(vh*sc-vr.height)/2;
       var fx=(fr.left-vr.left+ox)/sc,fy=(fr.top-vr.top+oy)/sc,fw=fr.width/sc,fh=fr.height/sc;
       /* etwas großzügiger als der Rahmen */
-      var mx=fw*0.08,my=fh*0.6;fx=Math.max(0,fx-mx);fy=Math.max(0,fy-my);fw=Math.min(vw-fx,fw+2*mx);fh=Math.min(vh-fy,fh+2*my);
-      var phase=tick%4;
-      if(phase===0)code=decodeRegion(v,fx,fy,fw,fh,1000,false,0);
-      else if(phase===1)code=decodeRegion(v,fx,fy,fw,fh,700,false,1);
-      else if(phase===2)code=decodeRegion(v,0,0,vw,vh,1100,false,0);
-      else code=decodeRegion(v,0,0,vw,vh,1100,true,0);
+      var mx=fw*0.08,my=fh*0.25;fx=Math.max(0,fx-mx);fy=Math.max(0,fy-my);fw=Math.min(vw-fx,fw+2*mx);fh=Math.min(vh-fy,fh+2*my);
+      /* abwechselnd: Rahmen normal/gedreht, scharf/grob, und das ganze Bild, damit es hochkant wie quer klappt */
+      var phase=tick%6;
+      if(phase===0)code=decodeRegion(v,fx,fy,fw,fh,1200,false,0);
+      else if(phase===1)code=decodeRegion(v,fx,fy,fw,fh,1200,true,0);
+      else if(phase===2)code=decodeRegion(v,fx,fy,fw,fh,700,false,1);
+      else if(phase===3)code=decodeRegion(v,0,0,vw,vh,1280,false,0);
+      else if(phase===4)code=decodeRegion(v,0,0,vw,vh,1280,true,0);
+      else code=decodeRegion(v,fx,fy,fw,fh,700,true,1);
     }catch(e){}
     if(code){found(code);return}
-    if(tick===40)scanMsg("Noch nichts erkannt: etwas weiter weg halten (ca. 15–20 cm), bis der Strichcode scharf ist.");
+    if(tick===60)scanMsg("Noch nichts erkannt: etwas weiter weg halten (ca. 15–20 cm), bis der Strichcode scharf ist.");
   }
   loopTimer=setTimeout(scanLoop,60);
 }
@@ -226,7 +229,7 @@ function startScan(){
       if(caps.zoom&&caps.zoom.max>=1.5)adv.zoom=Math.min(caps.zoom.max,2);
       if(Object.keys(adv).length)tr.applyConstraints({advanced:[adv]}).catch(function(){});
     }catch(e){}
-    scanMsg("Barcode quer in den Rahmen halten");
+    scanMsg("Barcode in den Rahmen halten, ca. 15–20 cm Abstand");
     scanLoop();
   },function(err){
     scanning=false;

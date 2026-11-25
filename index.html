@@ -102,7 +102,7 @@ form.add .field{flex:1}
 #scanner{position:fixed;inset:0;background:#000;z-index:15;display:flex;flex-direction:column}
 #scanner[hidden]{display:none}
 #scanner video{flex:1;width:100%;height:100%;object-fit:cover;min-height:0}
-#scanner .frame{position:absolute;left:10%;right:10%;top:38%;height:22%;border:3px solid var(--tag);border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.35);pointer-events:none}
+#scanner .frame{position:absolute;left:8%;right:8%;top:24%;height:40%;border:3px solid var(--tag);border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.35);pointer-events:none}
 #scanner .bar{position:absolute;left:0;right:0;bottom:0;padding:16px 16px calc(env(safe-area-inset-bottom) + 16px);display:flex;flex-direction:column;gap:10px;background:linear-gradient(transparent,rgba(0,0,0,.75) 30%)}
 #scanner .msg{color:#fff;text-align:center;font-size:15px;margin:0}
 #scanner .bar .btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
@@ -110,6 +110,7 @@ form.add .field{flex:1}
 #scanner .bar label.btn input{position:absolute;width:1px;height:1px;opacity:0}
 #toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:14px;max-width:calc(100% - 32px);z-index:20}
 #toast[hidden]{display:none}
+@media (orientation:landscape){#scanner .frame{left:20%;right:20%;top:15%;height:55%}}
 </style>
 </head>
 <body>
@@ -141,8 +142,8 @@ form.add .field{flex:1}
         </button>
         <button class="btn" id="manual-btn" type="button">Von Hand</button>
       </div>
-      <p class="hint">Halte den Barcode quer in den Rahmen, ca. 15–20 cm entfernt. Klappt es live nicht, tippe im Scanner auf „Foto“. Bekannte Produkte erkennt die App mit Preis wieder, bei neuen trägst du den Preis einmal ein.</p>
-      <p class="hint" style="font-size:11px;opacity:.7">Version 25.11. (neuer Barcode-Leser)</p>
+      <p class="hint">Halte den Barcode in den Rahmen, ca. 15–20 cm entfernt. Das Handy darfst du hochkant oder quer halten. Klappt es live nicht, tippe im Scanner auf „Foto“. Bekannte Produkte erkennt die App mit Preis wieder, bei neuen trägst du den Preis einmal ein.</p>
+      <p class="hint" style="font-size:11px;opacity:.7">Version 25.11.b (Barcode-Leser hochkant + quer)</p>
       <div id="cart-rows"></div>
       <div class="foot" id="cart-foot"></div>
     </section>
