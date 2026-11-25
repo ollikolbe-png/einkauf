@@ -103,9 +103,10 @@ form.add .field{flex:1}
 #scanner[hidden]{display:none}
 #scanner video{flex:1;width:100%;height:100%;object-fit:cover;min-height:0}
 #scanner .frame{position:absolute;left:8%;right:8%;top:24%;height:40%;border:3px solid var(--tag);border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.35);pointer-events:none}
-#scanner .bar{position:absolute;left:0;right:0;bottom:0;padding:16px 16px calc(env(safe-area-inset-bottom) + 16px);display:flex;flex-direction:column;gap:10px;background:linear-gradient(transparent,rgba(0,0,0,.75) 30%)}
+#scanner .bar{position:absolute;left:0;right:0;bottom:0;box-sizing:border-box;padding:16px max(12px,env(safe-area-inset-right)) calc(env(safe-area-inset-bottom) + 16px) max(12px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:10px;background:linear-gradient(transparent,rgba(0,0,0,.75) 30%)}
 #scanner .msg{color:#fff;text-align:center;font-size:15px;margin:0}
-#scanner .bar .btns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+#scanner .bar .btns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;box-sizing:border-box}
+#scanner .bar .btns .btn{min-width:0;width:100%;padding:12px 4px;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;box-sizing:border-box}
 #scanner .bar label.btn{display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative}
 #scanner .bar label.btn input{position:absolute;width:1px;height:1px;opacity:0}
 #toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:14px;max-width:calc(100% - 32px);z-index:20}
@@ -143,7 +144,7 @@ form.add .field{flex:1}
         <button class="btn" id="manual-btn" type="button">Von Hand</button>
       </div>
       <p class="hint">Halte den Barcode in den Rahmen, ca. 15–20 cm entfernt. Das Handy darfst du hochkant oder quer halten. Klappt es live nicht, tippe im Scanner auf „Foto“. Bekannte Produkte erkennt die App mit Preis wieder, bei neuen trägst du den Preis einmal ein.</p>
-      <p class="hint" style="font-size:11px;opacity:.7">Version 25.11.b (Barcode-Leser hochkant + quer)</p>
+      <p class="hint" style="font-size:11px;opacity:.7">Version 25.11.c (Barcode-Leser hochkant + quer)</p>
       <div id="cart-rows"></div>
       <div class="foot" id="cart-foot"></div>
     </section>
